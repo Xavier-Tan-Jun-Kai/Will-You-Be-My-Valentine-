@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Will You Be My Valentine?</title>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+  <script>
+    emailjs.init("8-_q6y45iDTwacEqN"); // ← Replace with your actual Public Key
+  </script>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      text-align: center;
+      background-color: #fff0f5;
+      margin: 0;
+      padding-top: 100px;
+    }
+    h1 {
+      font-size: 3em;
+      margin-bottom: 40px;
+      color: #d6336c;
+    }
+    button {
+      font-size: 1.5em;
+      padding: 20px 40px;
+      margin: 20px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    #yesBtn {
+      background-color: #28a745;
+      color: white;
+    }
+    #noBtn {
+      background-color: #dc3545;
+      color: white;
+    }
+    #message {
+      font-size: 2em;
+      color: #444;
+      margin-top: 40px;
+    }
+    #senderFormContainer, #valentineQuestion, #codeVerificationContainer {
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    input {
+      font-size: 1.2em;
+      padding: 10px;
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Role selection -->
+  <div id="roleSelection">
+    <h1>Are you the sender or receiver?</h1>
+    <button id="senderBtn">Sender</button>
+    <button id="receiverBtn">Receiver</button>
+  </div>
+
+  <!-- Sender form -->
+  <div id="senderFormContainer" style="display:none;">
+    <h1>Fill in the details</h1>
+    <form id="senderForm">
+      <label for="receiverName">Receiver's Name:</label>
+      <input type="text" id="receiverName" required placeholder="e.g. Alex" />
+
+      <label for="receiverEmail">Receiver's Gmail Address:</label>
+      <input type="email" id="receiverEmail" required placeholder="e.g. example@gmail.com" />
+
+      <label for="date">Date:</label>
+      <input type="date" id="date" required />
+
+      <label for="time">Time:</label>
+      <input type="time" id="time" required />
+
+      <label for="location">Location:</label>
+      <input type="text" id="location" required placeholder="e.g. Central Park" />
+
+      <button type="submit">Send</button>
+    </form>
+    <div id="sendMessage" style="font-size:1em; color:green;"></div>
+  </div>
+
+  <!-- Code verification -->
+  <div id="codeVerificationContainer" style="display:none;">
+    <h1>Enter your 4-digit code</h1>
+    <input type="text" id="codeInput" maxlength="4" placeholder="Enter code here" />
+    <button id="verifyCodeBtn">Verify</button>
+    <div id="verifyMessage" style="color:red; margin-top: 15px;"></div>
+  </div>
+
+  <!-- Valentine question -->
+  <div id="valentineQuestion" style="display:none;">
+    <h1 id="valentineTitle">Will You Be My Valentine?</h1>
+    <button id="yesBtn">Yes</button>
+    <button id="noBtn">No</button>
+    <div id="message"></div>
+    <div id="dateInfo" style="margin-top: 20px; font-size: 1.2em; color: #666;"></div>
+  </div>
+
+<script>
+  const roleSelection = document.getElementById("roleSelection");
+  const senderBtn = document.getElementById("senderBtn");
+  const receiverBtn = document.getElementById("receiverBtn");
+
+  const senderFormContainer = document.getElementById("senderFormContainer");
+  const senderForm = document.getElementById("senderForm");
+  const sendMessage = document.getElementById("sendMessage");
+
+  const codeVerificationContainer = document.getElementById("codeVerificationContainer");
+  const codeInput = document.getElementById("codeInput");
+  const verifyCodeBtn = document.getElementById("verifyCodeBtn");
+  const verifyMessage = document.getElementById("verifyMessage");
+
+  const valentineQuestion = document.getElementById("valentineQuestion");
+  const valentineTitle = document.getElementById("valentineTitle");
+  const noBtn = document.getElementById("noBtn");
+  const yesBtn = document.getElementById("yesBtn");
+  const message = document.getElementById("message");
+  const dateInfo = document.getElementById("dateInfo");
+
+  let noClickCount = 0;
+
+  const noMessages = [
+    "Why not? ...",
+    "But it will make me sad... :(",
+    "Please...",
+    "Pretty please...!",
+    "You are breaking my heart :("
+  ];
+
+  function isGmail(email) {
+    return email.toLowerCase().endsWith("@gmail.com");
+  }
+
+  function generateCode() {
+    return Math.floor(1000 + Math.random() * 9000).toString();
+  }
+
+  senderBtn.addEventListener("click", () => {
+    roleSelection.style.display = "none";
+    senderFormContainer.style.display = "block";
+  });
+
+  receiverBtn.addEventListener("click", () => {
+    roleSelection.style.display = "none";
+    codeVerificationContainer.style.display = "block";
+  });
+
+  senderForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+
+    const receiverName = document.getElementById("receiverName").value.trim();
+    const receiverEmail = document.getElementById("receiverEmail").value.trim();
+    const date = document.getElementById("date").value;
+    const time = document.getElementById("time").value;
+    const location = document.getElementById("location").value.trim();
+
+    if (!isGmail(receiverEmail)) {
+      alert("Please enter a valid Gmail address ending with @gmail.com");
+      return;
+    }
+
+    const code = generateCode();
+    const inviteData = { code, receiverName, receiverEmail, date, time, location };
+    localStorage.setItem("valentineInvite", JSON.stringify(inviteData));
+
+    emailjs.send("service_oxtvpsu", "template_qcgw3po", {
+      to_name: receiverName,
+      to_email: receiverEmail,
+      codeInput: code,
+      date: date,
+      time: time,
+      location: location,
+      name: "Anonymous Valentine 💌"
+    }).then(() => {
+      sendMessage.style.color = "green";
+      sendMessage.innerHTML = `Invite sent to <strong>${receiverEmail}</strong>!<br>
+        <em>Send this 4-digit code to the receiver:</em> <strong>${code}</strong><br><br>
+        Receiver should visit this page and select "Receiver", then enter the code.`;
+      senderForm.reset();
+    }).catch((error) => {
+      console.error("EmailJS error:", error);
+      alert("Failed to send email. Please try again.");
+    });
+  });
+
+  verifyCodeBtn.addEventListener("click", () => {
+    const enteredCode = codeInput.value.trim();
+    const inviteData = JSON.parse(localStorage.getItem("valentineInvite"));
+
+    if (!inviteData) {
+      verifyMessage.textContent = "No invite found. Please ask sender to send an invite first.";
+      return;
+    }
+
+    if (enteredCode === inviteData.code) {
+      codeVerificationContainer.style.display = "none";
+      valentineQuestion.style.display = "block";
+
+      valentineTitle.textContent = `Will You Be My Valentine, ${inviteData.receiverName}?`;
+
+      const formattedDate = new Date(inviteData.date).toLocaleDateString(undefined, {
+        year: 'numeric', month: 'long', day: 'numeric'
+      });
+      const timeObj = new Date(`1970-01-01T${inviteData.time}:00`);
+      const formattedTime = timeObj.toLocaleTimeString(undefined, {
+        hour: '2-digit', minute: '2-digit', hour12: true
+      });
+
+      dateInfo.textContent = `On ${formattedDate} at ${formattedTime}, Location: ${inviteData.location}`;
+      message.textContent = "";
+      noClickCount = 0;
+      yesBtn.style.transform = 'scale(1)';
+      yesBtn.style.position = 'static';
+      yesBtn.style.width = 'auto';
+      yesBtn.style.height = 'auto';
+      yesBtn.style.fontSize = '1.5em';
+      noBtn.style.display = 'inline-block';
+      yesBtn.textContent = "Yes";
+      verifyMessage.textContent = "";
+      codeInput.value = "";
+    } else {
+      verifyMessage.textContent = "Incorrect code. Please try again.";
+    }
+  });
+
+  yesBtn.addEventListener("click", () => {
+    message.textContent = "Yay! 💖 You just made my day!";
+    noBtn.style.display = 'none';
+    yesBtn.textContent = "😊";
+    yesBtn.style.fontSize = '2em';
+  });
+
+  noBtn.addEventListener("mouseenter", () => {
+    noClickCount++;
+    if (noClickCount > 3) {
+      noBtn.style.display = 'none';
+      message.textContent = "Okay, maybe next time... 😢";
+      return;
+    }
+    const x = Math.random() * (window.innerWidth - noBtn.offsetWidth);
+    const y = Math.random() * (window.innerHeight - noBtn.offsetHeight - 150) + 150;
+    noBtn.style.position = "absolute";
+    noBtn.style.left = `${x}px`;
+    noBtn.style.top = `${y}px`;
+  });
+</script>
+
+</body>
+</html>
